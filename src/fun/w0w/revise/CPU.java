@@ -1,5 +1,6 @@
 package fun.w0w.revise;
 
+import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings("unused")
@@ -116,6 +117,7 @@ public final class CPU {
     INSN_TABLE[n.getOpcode()] = n;
   }
   private static ThreadLocalRandom rng = ThreadLocalRandom.current();
+  private static Scanner inputScanner = new Scanner(System.in);
   static {//TODO: implement an entire REDCODE mode.
     table(new Insn(0x00, "NOP", 1, 4, (m) -> {}));
     table(new Insn(0x01, "ADD d8", 2, 8, (m) -> ADD(A, op8(m))));
@@ -126,8 +128,13 @@ public final class CPU {
     table(new Insn(0x06, "POP A", 1, 4, (m) -> POP(m, A)));
     table(new Insn(0x07, "LD SP,HL", 1, 4, (m) -> SP.setVal(HL.getVal())));
     table(new Insn(0x08, "JBR d8", 2, 8, true, (m) -> PC.setVal(PC.getVal() - op8(m))));
+    table(new Insn(0x09, "CLR A", 1, 4, (m) -> A.setVal(0)));
     table(new Insn(0x10, "JR d8", 2, 8, true, (m) -> PC.setVal(PC.getVal() + (byte) op8(m))));
     table(new Insn(0x1F, "KIL", 2, 4, (m) -> System.exit(op8(m))));
+    table(new Insn(0x20, "OUT A", 1, 4, (m) -> System.out.print(A.getVal())));
+    table(new Insn(0x21, "ASCOUT A", 1, 4, (m) -> System.out.print((char) A.getVal())));
+    table(new Insn(0x22, "IN A", 1, 4, (m) -> A.setVal(inputScanner.nextInt())));
+    table(new Insn(0x23, "ASCIN A", 1, 4, (m) -> A.setVal(inputScanner.next().charAt(0))));
     table(new Insn(0xFD, "RNG (a16)", 3, 8, (m) -> m.u1(op16(m), rng.nextInt(0x100))));
     table(new Insn(0xFE, "TBF", 1, 1, (m) -> backflow = !backflow));
   }
@@ -151,11 +158,11 @@ public final class CPU {
   public static void resumeExecution(MemoryHandler m) {
     int pc = PC.getVal();
     int opcode = m.u1(pc);
-    
+    int forward = handleOpcode(m, opcode);
     if (backflow) {
-      CPU.incPC(-handleOpcode(m, opcode));
+      CPU.incPC(-forward);
     } else {
-      CPU.incPC(handleOpcode(m, opcode));
+      CPU.incPC(forward);
     }
     CPU.PC.setVal(m.wrapAddress(CPU.PC.getVal()));
   }

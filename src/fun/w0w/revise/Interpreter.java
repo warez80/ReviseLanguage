@@ -32,18 +32,23 @@ public class Interpreter {
   public static void main(String[]args) {
     byte[] compiled = asm(""
         + "#define TEST 1  \n"
+        + "	    IN A       \n" // read int into A
+        + "     ASCOUT A   \n" // output the read value as a char
+        + "     CLR A      \n" // set A to 0
         + "     NOP        \n" // placeholder insn
         + "     ADD $1F    \n" // set A to $1F
-        + "     LD ($01),A \n" // change the NOP insn to a KIL insn
+        + "     LD ($03),A \n" // change the NOP insn to a KIL insn
         + "     JR 4       \n" // skip over the bytes
-        + "     db 7,4     \n" // is JR 7, but backwards :)
+        + "     db 7,8     \n" // is JBR 7, but backwards :)
         + "     TBF        "); // make control flow go backwards
     
     System.out.println("Source code: ");
     for (int i = 0; i < compiled.length; i++) {
       int b = compiled[i] & 0xFF;
-      System.out.print("0x" + Integer.toHexString(b).toUpperCase() + ", ");
+      if (i != 0) System.out.print(", ");
+      System.out.print("0x" + Integer.toHexString(b).toUpperCase());
     }
+    System.out.println();
     
     Interpreter x = new Interpreter(0);
     
